@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -13,11 +14,17 @@ var MutationRate = 0.005
 // PopSize is the size of the population
 var PopSize = 500
 
+const ascii string = "abcdefghijklmnopqrstuvwxyz \t"
+const asciiLen = len(ascii)
+
 func main() {
 	start := time.Now()
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	target := []byte("To be or not to be")
+	input := "solve the best coefficients for our teachers"
+	input = strings.ToLower(input)
+
+	target := []byte(input)
 	population := createPopulation(target)
 
 	found := false
@@ -25,8 +32,8 @@ func main() {
 	for !found {
 		generation++
 		bestOrganism := getBest(population)
-		fmt.Printf("\r generation: %d | %s | fitness: %2f", generation, string(bestOrganism.DNA), bestOrganism.Fitness)
-
+		fmt.Printf("\r generation: `%d`, fitness: `%2f`: %s           \t\t\t\t\t", generation, bestOrganism.Fitness, string(bestOrganism.DNA))
+		// time.Sleep(1 * time.Second)
 		if bytes.Compare(bestOrganism.DNA, target) == 0 {
 			found = true
 		} else {
@@ -48,9 +55,10 @@ type Organism struct {
 
 // creates a Organism
 func createOrganism(target []byte) (organism Organism) {
+
 	ba := make([]byte, len(target))
 	for i := 0; i < len(target); i++ {
-		ba[i] = byte(rand.Intn(95) + 32)
+		ba[i] = byte(ascii[rand.Intn(asciiLen)])
 	}
 	organism = Organism{
 		DNA:     ba,
@@ -119,8 +127,8 @@ func crossover(d1 Organism, d2 Organism) Organism {
 		DNA:     make([]byte, len(d1.DNA)),
 		Fitness: 0,
 	}
-	mid := rand.Intn(len(d1.DNA))
 	for i := 0; i < len(d1.DNA); i++ {
+		mid := rand.Intn(len(d1.DNA))
 		if i > mid {
 			child.DNA[i] = d1.DNA[i]
 		} else {
@@ -135,7 +143,13 @@ func crossover(d1 Organism, d2 Organism) Organism {
 func (d *Organism) mutate() {
 	for i := 0; i < len(d.DNA); i++ {
 		if rand.Float64() < MutationRate {
-			d.DNA[i] = byte(rand.Intn(95) + 32)
+			if d.DNA[i]+1 < ascii[asciiLen-1] {
+				d.DNA[i] = d.DNA[i] + 1
+			} else if d.DNA[i]-1 > ascii[0] {
+				d.DNA[i] = d.DNA[i] - 1
+			} else {
+				d.DNA[i] = byte(ascii[rand.Intn(asciiLen)])
+			}
 		}
 	}
 }
